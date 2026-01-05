@@ -1,5 +1,6 @@
 includes:
     - %rootDir%/../phpstan/conf/bleedingEdge.neon
+    - phpstan-baseline.neon
 
 parameters:
     level: 5

@@ -321,4 +321,21 @@ trait TimesheetCommandTrait
 
         return null;
     }
+
+    /**
+     * Try to convert the given string into a DateTime object and recursively ask for clarification if necessary.
+     */
+    private function parseAndRefineDateTime(SymfonyStyle $io, string $begin, string $valueName): \DateTime
+    {
+        try {
+            return new \DateTime($begin);
+        } catch (\Exception $e) {
+        }
+
+        return $this->parseAndRefineDateTime(
+            $io,
+            $io->ask(\sprintf('Value "%s" for field "%s" is not a valid DateTime. Please refine:', $begin, $valueName), $begin),
+            $valueName,
+        );
+    }
 }
