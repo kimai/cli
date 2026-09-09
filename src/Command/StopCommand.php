@@ -50,7 +50,7 @@ final class StopCommand extends BaseCommand
 
         $stopIds = [];
 
-        if (false !== $input->getOption('all')) {
+        if (false !== $input->getOption('all') || \count($running) === 1) {
             foreach ($running as $timesheet) {
                 $stopIds[] = $timesheet->getId();
             }
