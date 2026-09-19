@@ -11,6 +11,7 @@ namespace KimaiConsole\Command;
 
 use Swagger\Client\ApiException;
 use Swagger\Client\Model\TimesheetEditForm;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,12 +26,15 @@ final class StartCommand extends BaseCommand
         $this
             ->setName('start')
             ->setDescription('Starts a new timesheet')
-            ->setHelp('This command lets you start a new timesheet')
+            ->setHelp('This command lets you start a new timesheet and optionally end it immediately.')
             ->addOption('customer', 'c', InputOption::VALUE_OPTIONAL, 'The customer to filter the project list, can be an ID or a search term or empty (you will be prompted for a customer).')
             ->addOption('project', 'p', InputOption::VALUE_OPTIONAL, 'The project to use, can be an ID or a search term or empty. You will be prompted for the project.')
             ->addOption('activity', 'a', InputOption::VALUE_OPTIONAL, 'The activity ID to use')
             ->addOption('tags', 't', InputOption::VALUE_OPTIONAL, 'Comma separated list of tag names')
             ->addOption('description', 'd', InputOption::VALUE_OPTIONAL, 'The timesheet description')
+            ->addOption('begin', 'b', InputOption::VALUE_OPTIONAL, 'The begin (date and) time in a format supported by PHP')
+            ->addOption('end', 'e', InputOption::VALUE_OPTIONAL, 'The end (date and) time in a format supported by PHP')
+            ->addOption('timezone', 'z', InputOption::VALUE_OPTIONAL, 'IANA timezone (e.g. Asia/Kolkata) for interpreting --begin/--end. Falls back to the PHP default timezone if omitted.')
         ;
     }
 
@@ -81,6 +85,24 @@ final class StartCommand extends BaseCommand
             $form->setDescription($description);
         }
 
+        $timezone = $input->getOption('timezone');
+
+        try {
+            if (null !== ($begin = $input->getOption('begin'))) {
+                $begin = $this->parseAndRefineDateTime((string) $begin, 'begin', $timezone);
+                $form->setBegin($begin);
+            }
+
+            if (null !== ($end = $input->getOption('end'))) {
+                $end = $this->parseAndRefineDateTime((string) $end, 'end', $timezone);
+                $form->setEnd($end);
+            }
+        } catch (\InvalidArgumentException $ex) {
+            $io->error($ex->getMessage());
+
+            return Command::FAILURE;
+        }
+
         try {
             $timesheet = $api->postPostTimesheet($form);
         } catch (ApiException $ex) {
@@ -92,6 +114,7 @@ final class StartCommand extends BaseCommand
         $fields = [
             'ID' => $timesheet->getId(),
             'Begin' => $timesheet->getBegin()->format(\DateTime::ISO8601),
+            'End' => $timesheet->getEnd()?->format(\DateTime::ISO8601),
             'Description' => $timesheet->getDescription(),
             'Tags' => implode(PHP_EOL, $timesheet->getTags()),
             'Customer' => $customer->getName(),

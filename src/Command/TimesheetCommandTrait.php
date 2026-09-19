@@ -321,4 +321,26 @@ trait TimesheetCommandTrait
 
         return null;
     }
+
+    private function parseAndRefineDateTime(string $value, string $valueName, ?string $timezone = null): \DateTime
+    {
+        $zone = $this->resolveTimezone($timezone);
+
+        try {
+            return new \DateTime($value, $zone);
+        } catch (\Exception $e) {
+            throw new \InvalidArgumentException(\sprintf('Value "%s" for field "%s" is not a valid DateTime.', $value, $valueName));
+        }
+    }
+
+    private function resolveTimezone(?string $timezone): \DateTimeZone
+    {
+        $name = $timezone ?? date_default_timezone_get();
+
+        try {
+            return new \DateTimeZone($name);
+        } catch (\Exception $e) {
+            throw new \InvalidArgumentException(\sprintf('Invalid timezone "%s".', $name));
+        }
+    }
 }
