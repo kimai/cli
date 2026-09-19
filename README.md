@@ -59,7 +59,7 @@ You get a list of all available commands with `kimai`.
 
 - `kimai active` - display and update all running timesheets (via `--description` and `--tags`)
 - `kimai stop` - stop currently active timesheets and update them (via `--description` and `--tags`)
-- `kimai start` - start a new timesheet (see below)
+- `kimai start` - start a new timesheet, optionally providing specific begin and end times (see below)
 - `kimai customer:list` - show a list of customers
 - `kimai project:list` - show a list of projects
 - `kimai activity:list` - show a list of activities
@@ -103,6 +103,54 @@ bin/kimai start --customer Schowalter --project analyzer --activity iterate --de
   Activity      iterate viral infomediaries         
  ------------- ------------------------------------ 
 ```
+
+You may provide a specific begin and even an end time and/or date (useful for automated timesheet inserts). Both will be parsed according to
+PHP's [Supported Date and Time Formats rules](https://www.php.net/manual/en/datetime.formats.php) and thus allow relative values
+as well as partial time and date-time values.
+
+Examples:
+
+```shell
+# Forgot to start timer 20 minutes ago
+bin/kimai start --begin "-20min"
+
+# Forgot to start timer this morning
+bin/kimai start --begin "8:13"
+
+# Worked all day last Friday and forgot to track time
+bin/kimai start --begin "last friday 8:00" --end "last friday 16:00"
+
+# Will be working for an hour and already want to finalize my timesheet
+bin/kimai start --end "+1hour"
+
+# Of course ISO date-times work as well
+bin/kimai start --begin "2025-12-24 20:00" --end "2025-12-25 06:00" -d "HO HO HO"
+
+# As do epoch timestamps
+bin/kimai start --begin "@1766602800" --end "@1766638800" -d "HO HO HO"
+
+# Shortcuts -b for --begin and -e for --end are available
+bin/kimai start -b "2025-12-24 20:00" -e "2025-12-25 06:00"
+```
+
+If the command fails to parse your date input, it will repeatedly ask for refinement:
+
+```shell
+bin/kimai start --begin "202b-12-01 10:11"
+
+ Value "202b-12-01 10:11" for field "begin" is not a valid DateTime. Please refine: [202b-12-01 10:11]:
+ > 202c-12-01 10:11
+
+ Value "202c-12-01 10:11" for field "begin" is not a valid DateTime. Please refine: [202c-12-01 10:11]:
+ > 2025-12-01 10:11
+
+
+ [OK] Started timesheet
+
+```
+
+You might input values that are valid DateTimes but not accepted by Kimai. Final validation (e.g. begin < end) and rounding will always
+be handled on Kimai's side.
 
 ### Output format
 
